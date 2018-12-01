@@ -57,6 +57,7 @@ bool powerIsChanging = false;
 int lastPowerButtonState = HIGH;
 unsigned long lastPowerDebounceTime = 0;
 unsigned long lastRunModeDebounceTime = 0;
+int pendingRunModeChange = 0; //-1 for reverse, 1 for forward, 0 for no change
 
 //edit button values
 bool editModeIsActive;
@@ -164,8 +165,7 @@ void loadSavedModeSettings() {
 
 void checkPowerState() {
   int newSwitchValue = digitalRead(SWITCH_PIN);
-  //Serial.println(newSwitchValue);
-
+  
   //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
   if (newSwitchValue != lastPowerButtonState) {
     lastPowerDebounceTime = millis();
@@ -212,11 +212,23 @@ void checkRunModeState() {
   int newClockValue = digitalRead(CLOCK_PIN);
   int newDataValue = digitalRead(DATA_PIN);
 
-  
+  bool clockChanged = newClockValue != rotaryClockValue;
+  bool dataChanged = newDataValue != rotaryDataValue;
 
   //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
-  if (newClockValue != rotaryClockValue || newDataValue != rotaryDataValue) {
+  if (clockChanged || dataChanged) {
+    Serial.println("Run mode clock: " + String(newClockValue) + " data: " + String(newDataValue));
     lastPowerDebounceTime = millis();
+
+    //Because numerous value changes occur with each rotation, we need to track only the first change and let the rest debounce.
+    if (pendingRunModeChange == 0) {
+      if (clockChanged) {
+        pendingRunModeChange = -1;
+      }
+      else {
+        pendingRunModeChange = 1;
+      }
+    }
   }
 
   rotaryClockValue = newClockValue;
@@ -228,16 +240,30 @@ void checkRunModeState() {
     return;
   }
 
-  if (newClockValue == rotaryClockValue && newDataValue != rotaryDataValue) {
+  if (pendingRunModeChange == 0) {
+    //no incoming change
+    return;
+  }
+
+  int modeCount = sizeof(MODES) / sizeof(*MODES);
+  Serial.println(modeCount);
+
+  if (pendingRunModeChange == 1) {
     //mode rotated clockwise
-    currentModeIndex = (currentModeIndex + 1) % sizeof(*MODES);
+    currentModeIndex = (currentModeIndex + 1) % modeCount;
     Serial.println("Run mode change forward. Current run mode: " + String(MODES[currentModeIndex]));
   }
-  else if (newClockValue != rotaryClockValue && newDataValue == rotaryDataValue) {
+  else if (pendingRunModeChange == -1) {
     //mode rotated counter-clockwise
-    currentModeIndex = (currentModeIndex - 1) % sizeof(*MODES);
+    //modulo doesn't wrap around when using negatives, so we can't be quite as fancy here.
+    currentModeIndex--;
+    if (currentModeIndex < 0) {
+      currentModeIndex += modeCount;
+    }
     Serial.println("Run mode change backward. Current run mode: " + String(MODES[currentModeIndex]));
   }
+
+  pendingRunModeChange = 0;
 }
 
 Mode getCurrentRunMode() {
