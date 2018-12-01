@@ -36,7 +36,7 @@ void checkEditModeState();
 bool isInEditMode();
 
 /**
- * Remove from memory any pending but unsaved settings changes.
+ * Remove from memory any pending but unsaved settings changes and turn off edit mode.
  */
 void resetUnsavedChanges();
 

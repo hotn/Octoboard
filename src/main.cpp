@@ -93,10 +93,20 @@ void loop() {
     return;
   }
 
-  checkRunModeState();
-  checkEditModeState();
+  Mode currentRunMode = getCurrentRunMode();
 
-  switch (getCurrentRunMode()) {
+  checkRunModeState();
+
+  Mode newRunMode = getCurrentRunMode();
+
+  if (currentRunMode != newRunMode) {
+    resetUnsavedChanges();
+  }
+  else {
+    checkEditModeState();
+  }
+
+  switch (newRunMode) {
     case Mode::Solid:
       runSolidMode();
       break;
