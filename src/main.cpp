@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include <NeoPixelBus.h>
 #include "octoboard.h"
+#include "convert.h"
 
 const Mode MODES[4] = {Mode::Solid, Mode::GradientLinear, Mode::GradientCircular, Mode::GradientRotating};
 const unsigned long POWER_DEBOUNCE_DELAY = 50;
@@ -47,6 +48,7 @@ const int POWER_MODE_ROT_CLOCK_PIN = 2;
 const int POWER_MODE_ROT_DATA_PIN = 4;
 const int POWER_MODE_ROT_SWITCH_PIN = 8;
 const int LED_STRIP_DATA_PIN = 7;
+const int SETTINGS_POT_PIN = 5;
 
 //power/run mode rotary values
 int rotaryClockValue;
@@ -169,6 +171,8 @@ void loadSavedModeSettings() {
 
   gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
   gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
+
+  Serial.println("Saved speed: " + String(gradientRotateSpeed));
 
   Serial.println("Saved settings loaded");
 }
@@ -318,8 +322,17 @@ void resetUnsavedChanges() {
 }
 
 void runSolidMode() {
-  //TODO
-  strip.ClearTo(solidRgb);
+  RgbColor currentColor;
+  if (isInEditMode()) {
+    int potVal = analogRead(SETTINGS_POT_PIN);
+
+    currentColor = Convert::AnalogToColor(potVal);
+  }
+  else {
+    currentColor = solidRgb;
+  }
+
+  strip.ClearTo(currentColor);
   strip.Show();
 }
 
