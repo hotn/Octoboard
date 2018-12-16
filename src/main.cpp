@@ -43,9 +43,10 @@ const int GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS = 28;
 const int GRADIENT_ROTATE_MODE_ROTATE_SPEED = 29;
 
 //Pin assignments
-const int CLOCK_PIN = 2;
-const int DATA_PIN = 4;
-const int SWITCH_PIN = 8;
+const int POWER_MODE_ROT_CLOCK_PIN = 2;
+const int POWER_MODE_ROT_DATA_PIN = 4;
+const int POWER_MODE_ROT_SWITCH_PIN = 8;
+const int LED_STRIP_DATA_PIN = 7;
 
 //power/run mode rotary values
 int rotaryClockValue;
@@ -63,16 +64,20 @@ int pendingRunModeChange = 0; //-1 for reverse, 1 for forward, 0 for no change
 bool editModeIsActive;
 
 //current mode values
-RgbwColor solidRgb;
-RgbwColor gradientLinearRgb1;
-RgbwColor gradientLinearRgb2;
-RgbwColor gradientCircularRgb1;
-RgbwColor gradientCircularRgb2;
-RgbwColor gradientRotateRgb1;
-RgbwColor gradientRotateRgb2;
+RgbColor solidRgb;
+RgbColor gradientLinearRgb1;
+RgbColor gradientLinearRgb2;
+RgbColor gradientCircularRgb1;
+RgbColor gradientCircularRgb2;
+RgbColor gradientRotateRgb1;
+RgbColor gradientRotateRgb2;
 int gradientRotateGradientType;
 int gradientRotateSpeed;
 bool pendingChangesExist; //TODO: this will likely be unnecessary
+
+//pixels
+const int PIXEL_COUNT = 60;
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PIXEL_COUNT, LED_STRIP_DATA_PIN);
 
 void setup() {
   Serial.begin(9600);
@@ -80,9 +85,11 @@ void setup() {
   loadSavedModeSettings();
 
   //power/mode rotary encoder
-  rotaryClockValue = digitalRead(CLOCK_PIN);
-  rotaryDataValue = digitalRead(DATA_PIN);
-  rotarySwitchValue = digitalRead(SWITCH_PIN);
+  rotaryClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
+  rotaryDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
+  rotarySwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
+
+  strip.Begin();
 }
 
 void loop() {
@@ -125,47 +132,40 @@ void loop() {
 void loadSavedModeSettings() {
   Serial.println("Loading saved settings");
 
-  solidRgb = RgbwColor(
+  solidRgb = RgbColor(
     EEPROM.read(SOLID_MODE_RED_ADDRESS), 
     EEPROM.read(SOLID_MODE_GREEN_ADDRESS), 
-    EEPROM.read(SOLID_MODE_BLUE_ADDRESS), 
-    EEPROM.read(SOLID_MODE_BRIGHTNESS_ADDRESS));
+    EEPROM.read(SOLID_MODE_BLUE_ADDRESS));
 
-  gradientLinearRgb1 = RgbwColor(
+  gradientLinearRgb1 = RgbColor(
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientLinearRgb2 = RgbwColor(
+  gradientLinearRgb2 = RgbColor(
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientCircularRgb1 = RgbwColor(
+  gradientCircularRgb1 = RgbColor(
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientCircularRgb2 = RgbwColor(
+  gradientCircularRgb2 = RgbColor(
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientRotateRgb1 = RgbwColor(
+  gradientRotateRgb1 = RgbColor(
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientRotateRgb2 = RgbwColor(
+  gradientRotateRgb2 = RgbColor(
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS));
 
   gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
   gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
@@ -174,7 +174,7 @@ void loadSavedModeSettings() {
 }
 
 void checkPowerState() {
-  int newSwitchValue = digitalRead(SWITCH_PIN);
+  int newSwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
   
   //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
   if (newSwitchValue != lastPowerButtonState) {
@@ -219,8 +219,8 @@ bool isPowerOn() {
 }
 
 void checkRunModeState() {
-  int newClockValue = digitalRead(CLOCK_PIN);
-  int newDataValue = digitalRead(DATA_PIN);
+  int newClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
+  int newDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
 
   bool clockChanged = newClockValue != rotaryClockValue;
   bool dataChanged = newDataValue != rotaryDataValue;
@@ -319,6 +319,8 @@ void resetUnsavedChanges() {
 
 void runSolidMode() {
   //TODO
+  strip.ClearTo(solidRgb);
+  strip.Show();
 }
 
 void runGradientLinearMode() {
