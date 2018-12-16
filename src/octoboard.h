@@ -36,6 +36,11 @@ void checkEditModeState();
 bool isInEditMode();
 
 /**
+ * Save any changes made to the current mode.
+ */
+void saveChanges();
+
+/**
  * Remove from memory any pending but unsaved settings changes and turn off edit mode.
  */
 void resetUnsavedChanges();

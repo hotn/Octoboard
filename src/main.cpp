@@ -63,16 +63,19 @@ int pendingRunModeChange = 0; //-1 for reverse, 1 for forward, 0 for no change
 bool editModeIsActive;
 
 //current mode values
-RgbwColor solidRgb;
-RgbwColor gradientLinearRgb1;
-RgbwColor gradientLinearRgb2;
-RgbwColor gradientCircularRgb1;
-RgbwColor gradientCircularRgb2;
-RgbwColor gradientRotateRgb1;
-RgbwColor gradientRotateRgb2;
+RgbColor solidRgb;
+RgbColor gradientLinearRgb1;
+RgbColor gradientLinearRgb2;
+RgbColor gradientCircularRgb1;
+RgbColor gradientCircularRgb2;
+RgbColor gradientRotateRgb1;
+RgbColor gradientRotateRgb2;
 int gradientRotateGradientType;
 int gradientRotateSpeed;
 bool pendingChangesExist; //TODO: this will likely be unnecessary
+
+//pixels
+NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(60, 7);
 
 void setup() {
   Serial.begin(9600);
@@ -83,6 +86,8 @@ void setup() {
   rotaryClockValue = digitalRead(CLOCK_PIN);
   rotaryDataValue = digitalRead(DATA_PIN);
   rotarySwitchValue = digitalRead(SWITCH_PIN);
+
+  strip.Begin();
 }
 
 void loop() {
@@ -125,50 +130,45 @@ void loop() {
 void loadSavedModeSettings() {
   Serial.println("Loading saved settings");
 
-  solidRgb = RgbwColor(
+  solidRgb = RgbColor(
     EEPROM.read(SOLID_MODE_RED_ADDRESS), 
     EEPROM.read(SOLID_MODE_GREEN_ADDRESS), 
-    EEPROM.read(SOLID_MODE_BLUE_ADDRESS), 
-    EEPROM.read(SOLID_MODE_BRIGHTNESS_ADDRESS));
+    EEPROM.read(SOLID_MODE_BLUE_ADDRESS));
 
-  gradientLinearRgb1 = RgbwColor(
+  gradientLinearRgb1 = RgbColor(
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientLinearRgb2 = RgbwColor(
+  gradientLinearRgb2 = RgbColor(
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientCircularRgb1 = RgbwColor(
+  gradientCircularRgb1 = RgbColor(
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientCircularRgb2 = RgbwColor(
+  gradientCircularRgb2 = RgbColor(
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientRotateRgb1 = RgbwColor(
+  gradientRotateRgb1 = RgbColor(
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS), 
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientRotateRgb2 = RgbwColor(
+  gradientRotateRgb2 = RgbColor(
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS), 
     EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BRIGHTNESS_ADDRESS));
+    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS));
 
   gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
   gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
+
+  Serial.println("Saved speed: " + String(gradientRotateSpeed));
 
   Serial.println("Saved settings loaded");
 }
@@ -288,17 +288,43 @@ bool isInEditMode() {
   return editModeIsActive;
 }
 
+void saveChanges() {
+  switch (getCurrentRunMode()) {
+    case Mode::Solid:
+      EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
+      EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
+      EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
+      break;
+    case Mode::GradientLinear:
+      //TODO
+      break;
+    case Mode::GradientCircular:
+      //TODO
+      break;
+    case Mode::GradientRotating:
+      //TODO
+      break;
+  }
+}
+
 void resetUnsavedChanges() {
-  //TODO
-  if (!pendingChangesExist) {
+    if (!pendingChangesExist) {
     return;
   }
+
+  //TODO
 
   Serial.println("Resetting unsaved changes.");
 }
 
 void runSolidMode() {
   //TODO
+  for(int i = 0; i < strip.PixelCount(); i++) {
+
+  }
+  //strip.SetPixelColor(1, solidRgb);
+  strip.ClearTo(solidRgb);
+  strip.Show();
 }
 
 void runGradientLinearMode() {
