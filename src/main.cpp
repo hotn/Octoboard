@@ -288,11 +288,31 @@ bool isInEditMode() {
   return editModeIsActive;
 }
 
+void saveChanges() {
+  switch (getCurrentRunMode()) {
+    case Mode::Solid:
+      EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
+      EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
+      EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
+      break;
+    case Mode::GradientLinear:
+      //TODO
+      break;
+    case Mode::GradientCircular:
+      //TODO
+      break;
+    case Mode::GradientRotating:
+      //TODO
+      break;
+  }
+}
+
 void resetUnsavedChanges() {
-  //TODO
-  if (!pendingChangesExist) {
+    if (!pendingChangesExist) {
     return;
   }
+
+  //TODO
 
   Serial.println("Resetting unsaved changes.");
 }
