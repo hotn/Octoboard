@@ -2,6 +2,7 @@
 #include <EEPROM.h>
 #include <NeoPixelBus.h>
 #include "octoboard.h"
+#include "convert.h"
 
 const Mode MODES[4] = {Mode::Solid, Mode::GradientLinear, Mode::GradientCircular, Mode::GradientRotating};
 const unsigned long POWER_DEBOUNCE_DELAY = 50;
@@ -46,6 +47,7 @@ const int GRADIENT_ROTATE_MODE_ROTATE_SPEED = 29;
 const int CLOCK_PIN = 2;
 const int DATA_PIN = 4;
 const int SWITCH_PIN = 8;
+const int SETTINGS_POT_PIN = 5;
 
 //power/run mode rotary values
 int rotaryClockValue;
@@ -322,8 +324,19 @@ void runSolidMode() {
   for(int i = 0; i < strip.PixelCount(); i++) {
 
   }
+
+  RgbColor currentColor;
+  if (!isInEditMode()) {
+    int potVal = analogRead(SETTINGS_POT_PIN);
+
+    //currentColor =
+  }
+  else {
+    currentColor = solidRgb;
+  }
+
   //strip.SetPixelColor(1, solidRgb);
-  strip.ClearTo(solidRgb);
+  strip.ClearTo(currentColor);
   strip.Show();
 }
 
