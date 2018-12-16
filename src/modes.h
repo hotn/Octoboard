@@ -1,4 +1,4 @@
-typedef enum Mode {
+enum Mode {
   Solid,
   GradientLinear,
   GradientCircular,
