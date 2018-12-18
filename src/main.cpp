@@ -299,7 +299,13 @@ void checkEditModeState() {
 
   lastEditButtonState = newButtonValue;
 
+  bool editModeWasActive = editModeIsActive;
+
   editModeIsActive = newButtonValue == HIGH;
+
+  if (editModeWasActive && !editModeIsActive) {
+    saveChanges();
+  }
 
   Serial.println("Edit mode: " + String(editModeIsActive));
 
@@ -311,8 +317,14 @@ bool isInEditMode() {
 }
 
 void saveChanges() {
+  Serial.println("Saving changes");
+
   switch (getCurrentRunMode()) {
     case Mode::Solid:
+      int potVal = analogRead(SETTINGS_POT_PIN);
+
+      solidRgb = Convert::AnalogToColor(potVal);
+
       EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
       EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
       EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
