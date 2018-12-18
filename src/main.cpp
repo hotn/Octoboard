@@ -49,6 +49,8 @@ const int POWER_MODE_ROT_DATA_PIN = 4;
 const int POWER_MODE_ROT_SWITCH_PIN = 8;
 const int LED_STRIP_DATA_PIN = 7;
 const int SETTINGS_POT_PIN = 5;
+const int EDIT_BUTTON_SWITCH_PIN = 6;
+const int EDIT_BUTTON_LIGHT_PIN = 12;
 
 //power/run mode rotary values
 int rotaryClockValue;
@@ -63,6 +65,7 @@ unsigned long lastRunModeDebounceTime = 0;
 int pendingRunModeChange = 0; //-1 for reverse, 1 for forward, 0 for no change
 
 //edit button values
+int lastEditButtonState;
 bool editModeIsActive;
 
 //current mode values
@@ -85,6 +88,9 @@ void setup() {
   Serial.begin(9600);
 
   loadSavedModeSettings();
+
+  pinMode(EDIT_BUTTON_LIGHT_PIN, OUTPUT);
+  lastEditButtonState = digitalRead(EDIT_BUTTON_SWITCH_PIN);
 
   //power/mode rotary encoder
   rotaryClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
@@ -285,7 +291,19 @@ Mode getCurrentRunMode() {
 }
 
 void checkEditModeState() {
-  //TODO
+  int newButtonValue = digitalRead(EDIT_BUTTON_SWITCH_PIN);
+  
+  if (newButtonValue == lastEditButtonState) {
+    return;
+  }
+
+  lastEditButtonState = newButtonValue;
+
+  editModeIsActive = newButtonValue == HIGH;
+
+  Serial.println("Edit mode: " + String(editModeIsActive));
+
+  digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
 }
 
 bool isInEditMode() {
@@ -312,13 +330,10 @@ void saveChanges() {
 }
 
 void resetUnsavedChanges() {
-    if (!pendingChangesExist) {
-    return;
-  }
-
-  //TODO
-
   Serial.println("Resetting unsaved changes.");
+
+  editModeIsActive = false;
+  digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
 }
 
 void runSolidMode() {
