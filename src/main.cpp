@@ -104,7 +104,6 @@ void loop() {
   checkPowerState();
 
   if (!isPowerOn()) {
-    resetUnsavedChanges();
     return;
   }
 
@@ -222,6 +221,12 @@ void checkPowerState() {
   currentPowerState = !currentPowerState;
 
   Serial.println("Power state changed. Power on: " + String(currentPowerState));
+
+  if (!isPowerOn()) {
+    resetUnsavedChanges();
+    strip.ClearTo(RgbColor(0));
+    strip.Show();
+  }
 }
 
 bool isPowerOn() {
