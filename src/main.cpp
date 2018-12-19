@@ -48,7 +48,10 @@ const int POWER_MODE_ROT_CLOCK_PIN = 2;
 const int POWER_MODE_ROT_DATA_PIN = 4;
 const int POWER_MODE_ROT_SWITCH_PIN = 8;
 const int LED_STRIP_DATA_PIN = 7;
-const int SETTINGS_POT_PIN = 5;
+const int SETTINGS_POT_1_PIN = 2;
+const int SETTINGS_POT_2_PIN = 3;
+const int SETTINGS_POT_3_PIN = 4;
+const int SETTINGS_POT_4_PIN = 5;
 const int EDIT_BUTTON_SWITCH_PIN = 6;
 const int EDIT_BUTTON_LIGHT_PIN = 12;
 
@@ -326,7 +329,7 @@ void saveChanges() {
 
   switch (getCurrentRunMode()) {
     case Mode::Solid:
-      int potVal = analogRead(SETTINGS_POT_PIN);
+      int potVal = analogRead(SETTINGS_POT_2_PIN);
 
       solidRgb = Convert::AnalogToColor(potVal);
 
@@ -356,7 +359,7 @@ void resetUnsavedChanges() {
 void runSolidMode() {
   RgbColor currentColor;
   if (isInEditMode()) {
-    int potVal = analogRead(SETTINGS_POT_PIN);
+    int potVal = analogRead(SETTINGS_POT_2_PIN);
 
     currentColor = Convert::AnalogToColor(potVal);
   }
@@ -369,7 +372,32 @@ void runSolidMode() {
 }
 
 void runGradientLinearMode() {
-  //TODO
+  RgbColor currentStartColor;
+  RgbColor currentEndColor;
+
+  if (isInEditMode()) {
+    int potStartVal = analogRead(SETTINGS_POT_2_PIN);
+    int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+    int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
+
+    currentStartColor = Convert::AnalogToColor(potStartVal);
+    currentEndColor = Convert::AnalogToColor(potEndVal);
+  }
+  else {
+    currentStartColor = gradientLinearRgb1;
+    currentEndColor = gradientLinearRgb2;
+  }
+
+  RgbColor* colors = Convert::AnalogRangeToColors(1, 1023, PIXEL_COUNT);
+
+  for(int i = 0; i < PIXEL_COUNT; i++) {
+    RgbColor clr = colors[i];
+    strip.SetPixelColor(i, colors[i]);
+  }
+
+  delete[] colors;
+
+  strip.Show();
 }
 
 void runGradientCircularMode() {

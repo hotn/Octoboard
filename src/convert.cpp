@@ -34,3 +34,14 @@ RgbColor Convert::AnalogToColor(int analogValue) {
 
     return RgbColor(redVal, grnVal, bluVal);
 }
+
+RgbColor* Convert::AnalogRangeToColors(int startValue, int endValue, int stepCount) {
+    RgbColor* colors = new RgbColor[stepCount];
+
+    double stepAmount = (endValue - startValue) / (double)(stepCount - 1);
+    for(int i = 0; i < stepCount; i++) {
+        colors[i] = AnalogToColor(startValue + round(stepAmount * i));
+    }
+
+    return colors;
+}
