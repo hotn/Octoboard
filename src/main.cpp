@@ -378,7 +378,9 @@ void runGradientLinearMode() {
   if (isInEditMode()) {
     int potStartVal = analogRead(SETTINGS_POT_2_PIN);
     int potEndVal = analogRead(SETTINGS_POT_3_PIN);
-    int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
+
+    //TODO: apply direction of gradient
+    //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
 
     currentStartColor = Convert::AnalogToColor(potStartVal);
     currentEndColor = Convert::AnalogToColor(potEndVal);
@@ -388,10 +390,9 @@ void runGradientLinearMode() {
     currentEndColor = gradientLinearRgb2;
   }
 
-  RgbColor* colors = Convert::AnalogRangeToColors(1, 1023, PIXEL_COUNT);
+  RgbColor* colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
 
   for(int i = 0; i < PIXEL_COUNT; i++) {
-    RgbColor clr = colors[i];
     strip.SetPixelColor(i, colors[i]);
   }
 
