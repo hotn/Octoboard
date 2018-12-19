@@ -88,148 +88,148 @@ const int PIXEL_COUNT = 60;
 NeoPixelBus<NeoGrbFeature, Neo800KbpsMethod> strip(PIXEL_COUNT, LED_STRIP_DATA_PIN);
 
 void setup() {
-  Serial.begin(9600);
+    Serial.begin(9600);
 
-  loadSavedModeSettings();
+    loadSavedModeSettings();
 
-  pinMode(EDIT_BUTTON_LIGHT_PIN, OUTPUT);
-  lastEditButtonState = digitalRead(EDIT_BUTTON_SWITCH_PIN);
+    pinMode(EDIT_BUTTON_LIGHT_PIN, OUTPUT);
+    lastEditButtonState = digitalRead(EDIT_BUTTON_SWITCH_PIN);
 
-  //power/mode rotary encoder
-  rotaryClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
-  rotaryDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
-  rotarySwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
+    //power/mode rotary encoder
+    rotaryClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
+    rotaryDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
+    rotarySwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
 
-  strip.Begin();
+    strip.Begin();
 }
 
 void loop() {
-  checkPowerState();
+    checkPowerState();
 
-  if (!isPowerOn()) {
-    return;
-  }
+    if (!isPowerOn()) {
+        return;
+    }
 
-  Mode currentRunMode = getCurrentRunMode();
+    Mode currentRunMode = getCurrentRunMode();
 
-  checkRunModeState();
+    checkRunModeState();
 
-  Mode newRunMode = getCurrentRunMode();
+    Mode newRunMode = getCurrentRunMode();
 
-  if (currentRunMode != newRunMode) {
-    resetUnsavedChanges();
-  }
-  else {
-    checkEditModeState();
-  }
+    if (currentRunMode != newRunMode) {
+        resetUnsavedChanges();
+    }
+    else {
+        checkEditModeState();
+    }
 
-  switch (newRunMode) {
-    case Mode::Solid:
-      runSolidMode();
-      break;
-    case Mode::GradientLinear:
-      runGradientLinearMode();
-      break;
-    case Mode::GradientCircular:
-      runGradientCircularMode();
-      break;
-    case Mode::GradientRotating:
-      runGradientRotatingMode();
-      break;
-  }
+    switch (newRunMode) {
+        case Mode::Solid:
+            runSolidMode();
+            break;
+        case Mode::GradientLinear:
+            runGradientLinearMode();
+            break;
+        case Mode::GradientCircular:
+            runGradientCircularMode();
+            break;
+        case Mode::GradientRotating:
+            runGradientRotatingMode();
+            break;
+    }
 }
 
 void loadSavedModeSettings() {
-  Serial.println("Loading saved settings");
+    Serial.println("Loading saved settings");
 
-  solidRgb = RgbColor(
-    EEPROM.read(SOLID_MODE_RED_ADDRESS), 
-    EEPROM.read(SOLID_MODE_GREEN_ADDRESS), 
-    EEPROM.read(SOLID_MODE_BLUE_ADDRESS));
+    solidRgb = RgbColor(
+        EEPROM.read(SOLID_MODE_RED_ADDRESS), 
+        EEPROM.read(SOLID_MODE_GREEN_ADDRESS), 
+        EEPROM.read(SOLID_MODE_BLUE_ADDRESS));
 
-  gradientLinearRgb1 = RgbColor(
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS));
+    gradientLinearRgb1 = RgbColor(
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientLinearRgb2 = RgbColor(
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS));
+    gradientLinearRgb2 = RgbColor(
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientCircularRgb1 = RgbColor(
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS));
+    gradientCircularRgb1 = RgbColor(
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientCircularRgb2 = RgbColor(
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS));
+    gradientCircularRgb2 = RgbColor(
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientRotateRgb1 = RgbColor(
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS));
+    gradientRotateRgb1 = RgbColor(
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS));
 
-  gradientRotateRgb2 = RgbColor(
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS), 
-    EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS));
+    gradientRotateRgb2 = RgbColor(
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS), 
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS), 
+        EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS));
 
-  gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
-  gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
+    gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
+    gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
 
-  Serial.println("Saved speed: " + String(gradientRotateSpeed));
+    Serial.println("Saved speed: " + String(gradientRotateSpeed));
 
-  Serial.println("Saved settings loaded");
+    Serial.println("Saved settings loaded");
 }
 
 void checkPowerState() {
-  int newSwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
-  
-  //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
-  if (newSwitchValue != lastPowerButtonState) {
-    lastPowerDebounceTime = millis();
-  }
-
-  lastPowerButtonState = newSwitchValue;
-
-  //If a state change hasn't existed in its new state for more than the debounce delay time yet, return.
-  if (millis() - lastPowerDebounceTime <= POWER_DEBOUNCE_DELAY) {
-    Serial.println("Power button debounce");
-    return;
-  }
-
-  //Check if button is idle.
-  if (newSwitchValue == HIGH && !powerIsChanging) {
-    return;
-  }
-
-  //Check if button is currently being pushed.
-  if (newSwitchValue == LOW) {
-    //Check if button is currently being held in.
-    if (powerIsChanging) {
-      return;
+    int newSwitchValue = digitalRead(POWER_MODE_ROT_SWITCH_PIN);
+    
+    //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
+    if (newSwitchValue != lastPowerButtonState) {
+        lastPowerDebounceTime = millis();
     }
 
-    //Button has just been pressed, but not yet released.
-    Serial.println("Power state changing.");
-    powerIsChanging = true;
-    return;
-  }
+    lastPowerButtonState = newSwitchValue;
 
-  //Button has just been released.
-  powerIsChanging = false;
-  currentPowerState = !currentPowerState;
+    //If a state change hasn't existed in its new state for more than the debounce delay time yet, return.
+    if (millis() - lastPowerDebounceTime <= POWER_DEBOUNCE_DELAY) {
+        Serial.println("Power button debounce");
+        return;
+    }
 
-  Serial.println("Power state changed. Power on: " + String(currentPowerState));
+    //Check if button is idle.
+    if (newSwitchValue == HIGH && !powerIsChanging) {
+        return;
+    }
 
-  if (!isPowerOn()) {
-    resetUnsavedChanges();
-    strip.ClearTo(RgbColor(0));
-    strip.Show();
-  }
+    //Check if button is currently being pushed.
+    if (newSwitchValue == LOW) {
+        //Check if button is currently being held in.
+        if (powerIsChanging) {
+            return;
+        }
+
+        //Button has just been pressed, but not yet released.
+        Serial.println("Power state changing.");
+        powerIsChanging = true;
+        return;
+    }
+
+    //Button has just been released.
+    powerIsChanging = false;
+    currentPowerState = !currentPowerState;
+
+    Serial.println("Power state changed. Power on: " + String(currentPowerState));
+
+    if (!isPowerOn()) {
+        resetUnsavedChanges();
+        strip.ClearTo(RgbColor(0));
+        strip.Show();
+    }
 }
 
 bool isPowerOn() {
@@ -237,174 +237,174 @@ bool isPowerOn() {
 }
 
 void checkRunModeState() {
-  int newClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
-  int newDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
+    int newClockValue = digitalRead(POWER_MODE_ROT_CLOCK_PIN);
+    int newDataValue = digitalRead(POWER_MODE_ROT_DATA_PIN);
 
-  bool clockChanged = newClockValue != rotaryClockValue;
-  bool dataChanged = newDataValue != rotaryDataValue;
+    bool clockChanged = newClockValue != rotaryClockValue;
+    bool dataChanged = newDataValue != rotaryDataValue;
 
-  //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
-  if (clockChanged || dataChanged) {
-    Serial.println("Run mode clock: " + String(newClockValue) + " data: " + String(newDataValue));
-    lastPowerDebounceTime = millis();
+    //Only update debounce time when state changes. Otherwise, debounce return block will always fire.
+    if (clockChanged || dataChanged) {
+        Serial.println("Run mode clock: " + String(newClockValue) + " data: " + String(newDataValue));
+        lastPowerDebounceTime = millis();
 
-    //Because numerous value changes occur with each rotation, we need to track only the first change and let the rest debounce.
+        //Because numerous value changes occur with each rotation, we need to track only the first change and let the rest debounce.
+        if (pendingRunModeChange == 0) {
+            if (clockChanged) {
+                pendingRunModeChange = -1;
+            }
+            else {
+                pendingRunModeChange = 1;
+            }
+        }
+    }
+
+    rotaryClockValue = newClockValue;
+    rotaryDataValue = newDataValue;
+
+    //If a state change hasn't existed in its new state for more than the debounce delay time yet, return.
+    if (millis() - lastPowerDebounceTime <= POWER_DEBOUNCE_DELAY) {
+        Serial.println("Run mode rotary debounce");
+        return;
+    }
+
     if (pendingRunModeChange == 0) {
-      if (clockChanged) {
-        pendingRunModeChange = -1;
-      }
-      else {
-        pendingRunModeChange = 1;
-      }
+        //no incoming change
+        return;
     }
-  }
 
-  rotaryClockValue = newClockValue;
-  rotaryDataValue = newDataValue;
+    int modeCount = sizeof(MODES) / sizeof(*MODES);
+    Serial.println(modeCount);
 
-  //If a state change hasn't existed in its new state for more than the debounce delay time yet, return.
-  if (millis() - lastPowerDebounceTime <= POWER_DEBOUNCE_DELAY) {
-    Serial.println("Run mode rotary debounce");
-    return;
-  }
-
-  if (pendingRunModeChange == 0) {
-    //no incoming change
-    return;
-  }
-
-  int modeCount = sizeof(MODES) / sizeof(*MODES);
-  Serial.println(modeCount);
-
-  if (pendingRunModeChange == 1) {
-    //mode rotated clockwise
-    currentModeIndex = (currentModeIndex + 1) % modeCount;
-    Serial.println("Run mode change forward. Current run mode: " + String(MODES[currentModeIndex]));
-  }
-  else if (pendingRunModeChange == -1) {
-    //mode rotated counter-clockwise
-    //modulo doesn't wrap around when using negatives, so we can't be quite as fancy here.
-    currentModeIndex--;
-    if (currentModeIndex < 0) {
-      currentModeIndex += modeCount;
+    if (pendingRunModeChange == 1) {
+        //mode rotated clockwise
+        currentModeIndex = (currentModeIndex + 1) % modeCount;
+        Serial.println("Run mode change forward. Current run mode: " + String(MODES[currentModeIndex]));
     }
-    Serial.println("Run mode change backward. Current run mode: " + String(MODES[currentModeIndex]));
-  }
+    else if (pendingRunModeChange == -1) {
+        //mode rotated counter-clockwise
+        //modulo doesn't wrap around when using negatives, so we can't be quite as fancy here.
+        currentModeIndex--;
+        if (currentModeIndex < 0) {
+            currentModeIndex += modeCount;
+        }
+        Serial.println("Run mode change backward. Current run mode: " + String(MODES[currentModeIndex]));
+    }
 
-  pendingRunModeChange = 0;
+    pendingRunModeChange = 0;
 }
 
 Mode getCurrentRunMode() {
-  return MODES[currentModeIndex];
+    return MODES[currentModeIndex];
 }
 
 void checkEditModeState() {
-  int newButtonValue = digitalRead(EDIT_BUTTON_SWITCH_PIN);
-  
-  if (newButtonValue == lastEditButtonState) {
-    return;
-  }
+    int newButtonValue = digitalRead(EDIT_BUTTON_SWITCH_PIN);
+    
+    if (newButtonValue == lastEditButtonState) {
+        return;
+    }
 
-  lastEditButtonState = newButtonValue;
+    lastEditButtonState = newButtonValue;
 
-  bool editModeWasActive = editModeIsActive;
+    bool editModeWasActive = editModeIsActive;
 
-  editModeIsActive = newButtonValue == HIGH;
+    editModeIsActive = newButtonValue == HIGH;
 
-  if (editModeWasActive && !editModeIsActive) {
-    saveChanges();
-  }
+    if (editModeWasActive && !editModeIsActive) {
+        saveChanges();
+    }
 
-  Serial.println("Edit mode: " + String(editModeIsActive));
+    Serial.println("Edit mode: " + String(editModeIsActive));
 
-  digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
+    digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
 }
 
 bool isInEditMode() {
-  return editModeIsActive;
+    return editModeIsActive;
 }
 
 void saveChanges() {
-  Serial.println("Saving changes");
+    Serial.println("Saving changes");
 
-  switch (getCurrentRunMode()) {
-    case Mode::Solid:
-      int potVal = analogRead(SETTINGS_POT_2_PIN);
+    switch (getCurrentRunMode()) {
+        case Mode::Solid:
+            int potVal = analogRead(SETTINGS_POT_2_PIN);
 
-      solidRgb = Convert::AnalogToColor(potVal);
+            solidRgb = Convert::AnalogToColor(potVal);
 
-      EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
-      EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
-      EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
-      break;
-    case Mode::GradientLinear:
-      //TODO
-      break;
-    case Mode::GradientCircular:
-      //TODO
-      break;
-    case Mode::GradientRotating:
-      //TODO
-      break;
-  }
+            EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
+            EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
+            EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
+            break;
+        case Mode::GradientLinear:
+            //TODO
+            break;
+        case Mode::GradientCircular:
+            //TODO
+            break;
+        case Mode::GradientRotating:
+            //TODO
+            break;
+    }
 }
 
 void resetUnsavedChanges() {
-  Serial.println("Resetting unsaved changes.");
+    Serial.println("Resetting unsaved changes.");
 
-  editModeIsActive = false;
-  digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
+    editModeIsActive = false;
+    digitalWrite(EDIT_BUTTON_LIGHT_PIN, editModeIsActive);
 }
 
 void runSolidMode() {
-  RgbColor currentColor;
-  if (isInEditMode()) {
-    int potVal = analogRead(SETTINGS_POT_2_PIN);
+    RgbColor currentColor;
+    if (isInEditMode()) {
+        int potVal = analogRead(SETTINGS_POT_2_PIN);
 
-    currentColor = Convert::AnalogToColor(potVal);
-  }
-  else {
-    currentColor = solidRgb;
-  }
+        currentColor = Convert::AnalogToColor(potVal);
+    }
+    else {
+        currentColor = solidRgb;
+    }
 
-  strip.ClearTo(currentColor);
-  strip.Show();
+    strip.ClearTo(currentColor);
+    strip.Show();
 }
 
 void runGradientLinearMode() {
-  RgbColor currentStartColor;
-  RgbColor currentEndColor;
+    RgbColor currentStartColor;
+    RgbColor currentEndColor;
 
-  if (isInEditMode()) {
-    int potStartVal = analogRead(SETTINGS_POT_2_PIN);
-    int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+    if (isInEditMode()) {
+        int potStartVal = analogRead(SETTINGS_POT_2_PIN);
+        int potEndVal = analogRead(SETTINGS_POT_3_PIN);
 
-    //TODO: apply direction of gradient
-    //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
+        //TODO: apply direction of gradient
+        //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
 
-    currentStartColor = Convert::AnalogToColor(potStartVal);
-    currentEndColor = Convert::AnalogToColor(potEndVal);
-  }
-  else {
-    currentStartColor = gradientLinearRgb1;
-    currentEndColor = gradientLinearRgb2;
-  }
+        currentStartColor = Convert::AnalogToColor(potStartVal);
+        currentEndColor = Convert::AnalogToColor(potEndVal);
+    }
+    else {
+        currentStartColor = gradientLinearRgb1;
+        currentEndColor = gradientLinearRgb2;
+    }
 
-  RgbColor* colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
+    RgbColor* colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
 
-  for(int i = 0; i < PIXEL_COUNT; i++) {
-    strip.SetPixelColor(i, colors[i]);
-  }
+    for(int i = 0; i < PIXEL_COUNT; i++) {
+        strip.SetPixelColor(i, colors[i]);
+    }
 
-  delete[] colors;
+    delete[] colors;
 
-  strip.Show();
+    strip.Show();
 }
 
 void runGradientCircularMode() {
-  //TODO
+    //TODO
 }
 
 void runGradientRotatingMode() {
-  //TODO
+    //TODO
 }
