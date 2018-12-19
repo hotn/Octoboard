@@ -325,10 +325,12 @@ bool isInEditMode() {
 }
 
 void saveChanges() {
-    Serial.println("Saving changes");
+    Mode mode = getCurrentRunMode();
 
-    switch (getCurrentRunMode()) {
-        case Mode::Solid:
+    Serial.println("Saving changes for mode " + String(mode));
+
+    switch (mode) {
+        case Mode::Solid: {
             int potVal = analogRead(SETTINGS_POT_2_PIN);
 
             solidRgb = Convert::AnalogToColor(potVal);
@@ -337,15 +339,37 @@ void saveChanges() {
             EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
             EEPROM.write(SOLID_MODE_BLUE_ADDRESS, solidRgb.B);
             break;
-        case Mode::GradientLinear:
+        }
+        case Mode::GradientLinear: {
+            int potStartVal = analogRead(SETTINGS_POT_2_PIN);
+            int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+
+            //TODO: apply direction of gradient
+            //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
+
+            gradientLinearRgb1 = Convert::AnalogToColor(potStartVal);
+            gradientLinearRgb2 = Convert::AnalogToColor(potEndVal);
+
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS, gradientLinearRgb1.R);
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS, gradientLinearRgb1.G);
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS, gradientLinearRgb1.B);
+
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS, gradientLinearRgb2.R);
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS, gradientLinearRgb2.G);
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS, gradientLinearRgb2.B);
+            break;
+        }
+        case Mode::GradientCircular: {
             //TODO
             break;
-        case Mode::GradientCircular:
+        }
+        case Mode::GradientRotating: {
             //TODO
             break;
-        case Mode::GradientRotating:
-            //TODO
-            break;
+        }
+        default: {
+            //shouldn't need to do anything here
+        }
     }
 }
 
