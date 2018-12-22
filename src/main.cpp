@@ -331,9 +331,7 @@ void saveChanges() {
 
     switch (mode) {
         case Mode::Solid: {
-            int potVal = analogRead(SETTINGS_POT_2_PIN);
-
-            solidRgb = Convert::AnalogToColor(potVal);
+            solidRgb = strip.GetPixelColor(0);
 
             EEPROM.write(SOLID_MODE_RED_ADDRESS, solidRgb.R);
             EEPROM.write(SOLID_MODE_GREEN_ADDRESS, solidRgb.G);
@@ -341,14 +339,11 @@ void saveChanges() {
             break;
         }
         case Mode::GradientLinear: {
-            int potStartVal = analogRead(SETTINGS_POT_2_PIN);
-            int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+            gradientLinearRgb1 = strip.GetPixelColor(0);
+            gradientLinearRgb2 = strip.GetPixelColor(PIXEL_COUNT);
 
             //TODO: apply direction of gradient
             //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
-
-            gradientLinearRgb1 = Convert::AnalogToColor(potStartVal);
-            gradientLinearRgb2 = Convert::AnalogToColor(potEndVal);
 
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS, gradientLinearRgb1.R);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS, gradientLinearRgb1.G);
