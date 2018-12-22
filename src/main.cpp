@@ -75,6 +75,7 @@ bool editModeIsActive;
 RgbColor solidRgb;
 RgbColor gradientLinearRgb1;
 RgbColor gradientLinearRgb2;
+int gradientLinearBrightness;
 RgbColor gradientCircularRgb1;
 RgbColor gradientCircularRgb2;
 RgbColor gradientRotateRgb1;
@@ -339,16 +340,23 @@ void saveChanges() {
             break;
         }
         case Mode::GradientLinear: {
-            gradientLinearRgb1 = strip.GetPixelColor(0);
-            gradientLinearRgb2 = strip.GetPixelColor(PIXEL_COUNT);
+            int potBrightnessVal = analogRead(SETTINGS_POT_1_PIN);
+            int potStartVal = analogRead(SETTINGS_POT_2_PIN);
+            int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+
+            gradientLinearBrightness = potBrightnessVal;
+            gradientLinearRgb1 = Convert::AnalogToColor(potStartVal);
+            gradientLinearRgb2 = Convert::AnalogToColor(potEndVal);
 
             //TODO: apply direction of gradient
             //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
 
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS, potBrightnessVal);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS, gradientLinearRgb1.R);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS, gradientLinearRgb1.G);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS, gradientLinearRgb1.B);
 
+            EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS, potBrightnessVal);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS, gradientLinearRgb2.R);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS, gradientLinearRgb2.G);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS, gradientLinearRgb2.B);
@@ -395,26 +403,33 @@ void runSolidMode() {
 void runGradientLinearMode() {
     RgbColor currentStartColor;
     RgbColor currentEndColor;
+    int currentBrightness;
+    RgbColor* colors;
 
     if (isInEditMode()) {
         int potStartVal = analogRead(SETTINGS_POT_2_PIN);
         int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+
+        //TODO: provide mechanism to adjust start/end brightnesses independently
 
         //TODO: apply direction of gradient
         //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
 
         currentStartColor = Convert::AnalogToColor(potStartVal);
         currentEndColor = Convert::AnalogToColor(potEndVal);
+        currentBrightness = analogRead(SETTINGS_POT_1_PIN);
     }
     else {
         currentStartColor = gradientLinearRgb1;
         currentEndColor = gradientLinearRgb2;
+        currentBrightness = gradientLinearBrightness;
     }
 
-    RgbColor* colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
+    colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
 
     for(int i = 0; i < PIXEL_COUNT; i++) {
-        strip.SetPixelColor(i, colors[i]);
+        RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
+        strip.SetPixelColor(i, color);
     }
 
     delete[] colors;
