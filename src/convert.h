@@ -30,6 +30,13 @@ class Convert {
          * objects representing a color transition from start to end colors.
          */
         static RgbColor* ColorRangeToColors(RgbColor startColor, RgbColor endColor, int stepCount);
+
+        /**
+         * Convert an RgbColor object to a brightness-adjusted color object based on an
+         * analog brightness value ranging from 0 to 1023. Optional parameters may
+         * be provided to specify the lowest and highest brightness values allowed.
+         */
+        static RgbColor ColorToBrightnessAdjustedColor(RgbColor color, int analogValue, int minimumBrightness = 0, int maximumBrightness = 100);
         
     private:
         // Disallow creating an instance of this object

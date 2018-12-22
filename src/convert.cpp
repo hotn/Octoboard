@@ -85,3 +85,21 @@ RgbColor* Convert::ColorRangeToColors(RgbColor startColor, RgbColor endColor, in
 
     return colors;
 }
+
+RgbColor Convert::ColorToBrightnessAdjustedColor(RgbColor color, int analogValue, int minimumBrightness, int maximumBrightness) {
+    if (minimumBrightness < 0) {
+        minimumBrightness = 0;
+    }
+
+    if (maximumBrightness > 100) {
+        maximumBrightness = 100;
+    }
+
+    int percent = map(analogValue, 0, 1023, minimumBrightness, maximumBrightness);
+
+    int r = round(color.R * (percent / (double)100));
+    int g = round(color.G * (percent / (double)100));
+    int b = round(color.B * (percent / (double)100));
+
+    return RgbColor(r, g, b);
+}

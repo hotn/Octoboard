@@ -383,9 +383,11 @@ void resetUnsavedChanges() {
 void runSolidMode() {
     RgbColor currentColor;
     if (isInEditMode()) {
-        int potVal = analogRead(SETTINGS_POT_2_PIN);
+        int brightnessVal = analogRead(SETTINGS_POT_1_PIN);
+        int colorVal = analogRead(SETTINGS_POT_2_PIN);
 
-        currentColor = Convert::AnalogToColor(potVal);
+        currentColor = Convert::AnalogToColor(colorVal);
+        currentColor = Convert::ColorToBrightnessAdjustedColor(currentColor, brightnessVal, 5);
     }
     else {
         currentColor = solidRgb;
