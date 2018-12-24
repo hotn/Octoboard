@@ -41,7 +41,8 @@ const int GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS = 25;
 const int GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS = 26;
 const int GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS = 27;
 const int GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS = 28;
-const int GRADIENT_ROTATE_MODE_ROTATE_SPEED = 29;
+const int GRADIENT_ROTATE_MODE_ROTATE_SPEED_ADDRESS = 29;
+const int CURRENT_MODE_ADDRESS = 30;
 
 //Pin assignments
 const int POWER_MODE_ROT_CLOCK_PIN = 2;
@@ -59,7 +60,7 @@ const int EDIT_BUTTON_LIGHT_PIN = 12;
 int rotaryClockValue;
 int rotaryDataValue;
 int rotarySwitchValue;
-int currentModeIndex = 0;
+int currentModeIndex;
 bool currentPowerState = true;
 bool powerIsChanging = false;
 int lastPowerButtonState = HIGH;
@@ -179,7 +180,9 @@ void loadSavedModeSettings() {
         EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS));
 
     gradientRotateGradientType = EEPROM.read(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS);
-    gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED);
+    gradientRotateSpeed = EEPROM.read(GRADIENT_ROTATE_MODE_ROTATE_SPEED_ADDRESS);
+
+    currentModeIndex = EEPROM.read(CURRENT_MODE_ADDRESS);
 
     Serial.println("Saved speed: " + String(gradientRotateSpeed));
 
@@ -292,7 +295,10 @@ void checkRunModeState() {
         Serial.println("Run mode change backward. Current run mode: " + String(MODES[currentModeIndex]));
     }
 
-    pendingRunModeChange = 0;
+    if (pendingRunModeChange != 0) {
+        EEPROM.write(CURRENT_MODE_ADDRESS, currentModeIndex);
+        pendingRunModeChange = 0;
+    }
 }
 
 Mode getCurrentRunMode() {
