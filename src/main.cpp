@@ -380,6 +380,13 @@ void saveChanges() {
             //shouldn't need to do anything here
         }
     }
+
+    for (int i = 0; i < 4; i++) {
+        digitalWrite(EDIT_BUTTON_LIGHT_PIN, HIGH);
+        delay(300);
+        digitalWrite(EDIT_BUTTON_LIGHT_PIN, LOW);
+        delay(300);
+    }
 }
 
 void resetUnsavedChanges() {
