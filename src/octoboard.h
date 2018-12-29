@@ -64,3 +64,13 @@ void runGradientCircularMode();
  * Run the device in rotating gradient color mode.
  */
 void runGradientRotatingMode();
+
+/**
+ * Reset all settings to default values;
+ */
+void factoryReset();
+
+/**
+ * Blink the LED ring on the settings button
+ */
+void blinkButton(int blinkCount, int onOffDelay);

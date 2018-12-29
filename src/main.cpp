@@ -112,41 +112,45 @@ const int CIRCULAR_INDEXES[9][12] = {
 const unsigned long POWER_DEBOUNCE_DELAY = 50;
 const unsigned long RUN_MODE_DEBOUNCE_DELAY = 50;
 
+//how long to hold the power button before resetting to factory settings
+const int RESET_TIME_DELAY = 5000;
+
 //Settings assignments
-const int SOLID_MODE_BRIGHTNESS_ADDRESS = 0;
-const int SOLID_MODE_RED_ADDRESS = 1;
-const int SOLID_MODE_GREEN_ADDRESS = 2;
-const int SOLID_MODE_BLUE_ADDRESS = 3;
+#define SOLID_MODE_BRIGHTNESS_ADDRESS 0
+#define SOLID_MODE_RED_ADDRESS 1
+#define SOLID_MODE_GREEN_ADDRESS 2
+#define SOLID_MODE_BLUE_ADDRESS 3
+#define GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS 10
+#define GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS 11
+#define GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS 12
+#define GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS 13
+#define GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS 14
+#define GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS 15
+#define GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS 16
+#define GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS 17
+#define GRADIENT_LINEAR_MODE_DIRECTION_ADDRESS 18
+#define GRADIENT_CIRCULAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS 20
+#define GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS 21
+#define GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS 22
+#define GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS 23
+#define GRADIENT_CIRCULAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS 24
+#define GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS 25
+#define GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS 26
+#define GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS 27
+#define GRADIENT_CIRCULAR_MODE_COLOR_SPREAD_ADDRESS 28
+#define GRADIENT_ROTATE_MODE_COLOR_1_BRIGHTNESS_ADDRESS 30
+#define GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS 31
+#define GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS 32
+#define GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS 33
+#define GRADIENT_ROTATE_MODE_COLOR_2_BRIGHTNESS_ADDRESS 34
+#define GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS 35
+#define GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS 36
+#define GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS 37
+#define GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS 38
+#define GRADIENT_ROTATE_MODE_ROTATE_SPEED_ADDRESS 39
 
-const int GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS = 4;
-const int GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS = 5;
-const int GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS = 6;
-const int GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS = 7;
-const int GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS = 8;
-const int GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS = 9;
-const int GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS = 10;
-const int GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS = 11;
-
-const int GRADIENT_CIRCULAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS = 12;
-const int GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS = 13;
-const int GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS = 14;
-const int GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS = 15;
-const int GRADIENT_CIRCULAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS = 16;
-const int GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS = 17;
-const int GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS = 18;
-const int GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS = 19;
-
-const int GRADIENT_ROTATE_MODE_COLOR_1_BRIGHTNESS_ADDRESS = 20;
-const int GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS = 21;
-const int GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS = 22;
-const int GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS = 23;
-const int GRADIENT_ROTATE_MODE_COLOR_2_BRIGHTNESS_ADDRESS = 24;
-const int GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS = 25;
-const int GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS = 26;
-const int GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS = 27;
-const int GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS = 28;
-const int GRADIENT_ROTATE_MODE_ROTATE_SPEED_ADDRESS = 29;
-const int CURRENT_MODE_ADDRESS = 30;
+#define CURRENT_MODE_ADDRESS 50
+#define SETTINGS_HAVE_CHANGED 51 //whether or not we're on factory defaults
 
 //Pin assignments
 const int POWER_MODE_ROT_CLOCK_PIN = 2;
@@ -167,6 +171,7 @@ int rotarySwitchValue;
 int currentModeIndex;
 bool currentPowerState = true;
 bool powerIsChanging = false;
+unsigned long powerIsChangingStartTime = 0;
 int lastPowerButtonState = HIGH;
 unsigned long lastPowerDebounceTime = 0;
 unsigned long lastRunModeDebounceTime = 0;
@@ -176,18 +181,26 @@ int pendingRunModeChange = 0; //-1 for reverse, 1 for forward, 0 for no change
 int lastEditButtonState;
 bool editModeIsActive;
 
-//current mode values
+//solid mode values
 RgbColor solidRgb;
+
+//linear gradient mode values
 RgbColor gradientLinearRgb1;
 RgbColor gradientLinearRgb2;
 int gradientLinearBrightness;
+int gradientLinearDirection;
+
+//circular gradient mode values
 RgbColor gradientCircularRgb1;
 RgbColor gradientCircularRgb2;
+int gradientCircularBrightness;
+int gradientCircularColorSpread;
+
+//rotating gradient mode values
 RgbColor gradientRotateRgb1;
 RgbColor gradientRotateRgb2;
 int gradientRotateGradientType;
 int gradientRotateSpeed;
-bool pendingChangesExist; //TODO: this will likely be unnecessary
 
 //pixels
 const int PIXEL_COUNT = 60;
@@ -263,6 +276,8 @@ void loadSavedModeSettings() {
         EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS), 
         EEPROM.read(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS));
 
+    gradientLinearDirection = EEPROM.read(GRADIENT_LINEAR_MODE_DIRECTION_ADDRESS);
+
     gradientCircularRgb1 = RgbColor(
         EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS), 
         EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS), 
@@ -272,6 +287,8 @@ void loadSavedModeSettings() {
         EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS), 
         EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS), 
         EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS));
+
+    gradientCircularColorSpread = EEPROM.read(GRADIENT_CIRCULAR_MODE_COLOR_SPREAD_ADDRESS);
 
     gradientRotateRgb1 = RgbColor(
         EEPROM.read(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS), 
@@ -318,12 +335,18 @@ void checkPowerState() {
     if (newSwitchValue == LOW) {
         //Check if button is currently being held in.
         if (powerIsChanging) {
+            if (millis() - powerIsChangingStartTime > RESET_TIME_DELAY) {
+                factoryReset();
+            } 
+
             return;
         }
 
         //Button has just been pressed, but not yet released.
         Serial.println("Power state changing.");
         powerIsChanging = true;
+        powerIsChangingStartTime = millis();
+
         return;
     }
 
@@ -485,12 +508,9 @@ void saveChanges() {
         }
     }
 
-    for (int i = 0; i < 4; i++) {
-        digitalWrite(EDIT_BUTTON_LIGHT_PIN, HIGH);
-        delay(300);
-        digitalWrite(EDIT_BUTTON_LIGHT_PIN, LOW);
-        delay(300);
-    }
+    EEPROM.write(SETTINGS_HAVE_CHANGED, 1);
+
+    blinkButton(4, 300);
 }
 
 void resetUnsavedChanges() {
@@ -555,9 +575,66 @@ void runGradientLinearMode() {
 }
 
 void runGradientCircularMode() {
-    //TODO
+    //TODO: implement
 }
 
 void runGradientRotatingMode() {
-    //TODO
+    //TODO: implement
+}
+
+void factoryReset() {
+    //TODO: figure out how to store defaults in a const collection rather than here
+    Serial.println("Factory reset triggered");
+
+    EEPROM.write(SOLID_MODE_BRIGHTNESS_ADDRESS, 10);
+    EEPROM.write(SOLID_MODE_RED_ADDRESS, 128);
+    EEPROM.write(SOLID_MODE_GREEN_ADDRESS, 0);
+    EEPROM.write(SOLID_MODE_BLUE_ADDRESS, 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS, 50);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS, 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_GREEN_ADDRESS, 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BLUE_ADDRESS, 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS, 50);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS, 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS , 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_LINEAR_MODE_DIRECTION_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS , 50);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_1_RED_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_1_GREEN_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_1_BLUE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_2_BRIGHTNESS_ADDRESS , 50);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_2_RED_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_2_GREEN_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_2_BLUE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_CIRCULAR_MODE_COLOR_SPREAD_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_1_BRIGHTNESS_ADDRESS , 50);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_1_RED_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_1_GREEN_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_1_BLUE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_2_BRIGHTNESS_ADDRESS , 50);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_2_RED_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_2_GREEN_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_COLOR_2_BLUE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_GRADIENT_TYPE_ADDRESS , 0);
+    EEPROM.write(GRADIENT_ROTATE_MODE_ROTATE_SPEED_ADDRESS , 0);
+    EEPROM.write(CURRENT_MODE_ADDRESS , 0);
+    EEPROM.write(SETTINGS_HAVE_CHANGED, 0);
+
+    powerIsChanging = false;
+    editModeIsActive = false;
+    currentModeIndex = 0;
+
+    blinkButton(10, 70);
+
+    loadSavedModeSettings();
+}
+
+void blinkButton(int blinkCount, int onOffDelay) {
+    for (int i = 0; i < blinkCount; i++) {
+        digitalWrite(EDIT_BUTTON_LIGHT_PIN, HIGH);
+        delay(onOffDelay);
+        digitalWrite(EDIT_BUTTON_LIGHT_PIN, LOW);
+        delay(onOffDelay);
+    }
 }
