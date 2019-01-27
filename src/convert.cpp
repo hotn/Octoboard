@@ -46,7 +46,7 @@ RgbColor* Convert::AnalogRangeToColors(int startValue, int endValue, int stepCou
     return colors;
 }
 
-int Convert::ColorToAnalog(RgbColor color) {
+int Convert::ColorToAnalog(const RgbColor color) {
     if (color.R == 0) {
         return color.B * 4 / 3 + 341;
     }
@@ -60,7 +60,7 @@ int Convert::ColorToAnalog(RgbColor color) {
     return 0;
 }
 
-int* Convert::ColorRangeToAnalogs(RgbColor startColor, RgbColor endColor, int stepCount) {
+int* Convert::ColorRangeToAnalogs(const RgbColor startColor, const RgbColor endColor, int stepCount) {
     int* values = new int[stepCount];
 
     int startValue = ColorToAnalog(startColor);
@@ -73,7 +73,7 @@ int* Convert::ColorRangeToAnalogs(RgbColor startColor, RgbColor endColor, int st
     return values;
 }
 
-RgbColor* Convert::ColorRangeToColors(RgbColor startColor, RgbColor endColor, int stepCount) {
+RgbColor* Convert::ColorRangeToColors(const RgbColor startColor, const RgbColor endColor, int stepCount) {
     int* values = ColorRangeToAnalogs(startColor, endColor, stepCount);
     RgbColor* colors = new RgbColor[stepCount];
 
@@ -86,7 +86,7 @@ RgbColor* Convert::ColorRangeToColors(RgbColor startColor, RgbColor endColor, in
     return colors;
 }
 
-RgbColor Convert::ColorToBrightnessAdjustedColor(RgbColor color, int analogValue, int minimumBrightness, int maximumBrightness) {
+RgbColor Convert::ColorToBrightnessAdjustedColor(const RgbColor color, int analogValue, int minimumBrightness, int maximumBrightness) {
     if (minimumBrightness < 0) {
         minimumBrightness = 0;
     }

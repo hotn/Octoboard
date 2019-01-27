@@ -1,3 +1,6 @@
+#ifndef OCTOBOARD_H
+#define OCTOBOARD_H
+
 #include "modes.h"
 
 /**
@@ -74,3 +77,4 @@ void factoryReset();
  * Blink the LED ring on the settings button
  */
 void blinkButton(int blinkCount, int onOffDelay);
+#endif

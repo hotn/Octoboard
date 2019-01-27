@@ -1,3 +1,6 @@
+#ifndef LED_H
+#define LED_H
+
 class LED {
     public:
         int pin;
@@ -7,4 +10,6 @@ class LED {
         int brightness;
 
         int GetAdjustedValue();
-}
+};
+
+#endif
