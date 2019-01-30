@@ -190,6 +190,12 @@ RgbColor gradientLinearRgb2;
 int gradientLinearBrightness;
 int gradientLinearDirection;
 
+//used to exit runGradientLinearMode() if nothing has changed
+int lastPotStartValue;
+int lastPotEndValue;
+int lastBrightness;
+int lastDirection;
+
 //circular gradient mode values
 RgbColor gradientCircularRgb1;
 RgbColor gradientCircularRgb2;
@@ -476,13 +482,12 @@ void saveChanges() {
             int potBrightnessVal = analogRead(SETTINGS_POT_1_PIN);
             int potStartVal = analogRead(SETTINGS_POT_2_PIN);
             int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+            int directionVal = analogRead(SETTINGS_POT_4_PIN);
 
             gradientLinearBrightness = potBrightnessVal;
             gradientLinearRgb1 = Convert::AnalogToColor(potStartVal);
             gradientLinearRgb2 = Convert::AnalogToColor(potEndVal);
-
-            //TODO: apply direction of gradient
-            //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
+            gradientLinearDirection = map(directionVal, 0, 1023, 0, 7);
 
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_BRIGHTNESS_ADDRESS, potBrightnessVal);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_1_RED_ADDRESS, gradientLinearRgb1.R);
@@ -493,6 +498,8 @@ void saveChanges() {
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_RED_ADDRESS, gradientLinearRgb2.R);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_GREEN_ADDRESS, gradientLinearRgb2.G);
             EEPROM.write(GRADIENT_LINEAR_MODE_COLOR_2_BLUE_ADDRESS, gradientLinearRgb2.B);
+
+            EEPROM.write(GRADIENT_LINEAR_MODE_DIRECTION_ADDRESS, gradientLinearDirection);
             break;
         }
         case Mode::GradientCircular: {
@@ -541,32 +548,144 @@ void runGradientLinearMode() {
     RgbColor currentStartColor;
     RgbColor currentEndColor;
     int currentBrightness;
-    RgbColor* colors;
-
+    int currentDirection;
+    
     if (isInEditMode()) {
+        int potBrighnessVal = analogRead(SETTINGS_POT_1_PIN);
         int potStartVal = analogRead(SETTINGS_POT_2_PIN);
         int potEndVal = analogRead(SETTINGS_POT_3_PIN);
+        int directionVal = analogRead(SETTINGS_POT_4_PIN);
+
+        
+
+        if (abs(potBrighnessVal - lastBrightness) < 3 && 
+            abs(potStartVal - lastPotStartValue) < 3 && 
+            abs(potEndVal - lastPotEndValue) < 3 && 
+            abs(directionVal - lastDirection) < 3) {
+            Serial.println("-----SAMESIES");
+
+            return;
+        }
+        else {
+            Serial.println("DIFF---------");
+
+            lastBrightness = potBrighnessVal;
+            lastPotStartValue = potStartVal;
+            lastPotEndValue = potEndVal;
+            lastDirection = directionVal;
+        }
+
+        currentDirection = map(directionVal, 0, 1023, 0, 7);
 
         //TODO: provide mechanism to adjust start/end brightnesses independently
 
-        //TODO: apply direction of gradient
-        //int potDirectionVal = analogRead(SETTINGS_POT_4_PIN);
-
         currentStartColor = Convert::AnalogToColor(potStartVal);
         currentEndColor = Convert::AnalogToColor(potEndVal);
-        currentBrightness = analogRead(SETTINGS_POT_1_PIN);
+        currentBrightness = potBrighnessVal;
     }
     else {
         currentStartColor = gradientLinearRgb1;
         currentEndColor = gradientLinearRgb2;
         currentBrightness = gradientLinearBrightness;
+        currentDirection = gradientLinearDirection;
     }
 
-    colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, PIXEL_COUNT);
+    int sizes[4] = {
+        sizeof(LINEAR_LED_INDEXES) / sizeof(*LINEAR_LED_INDEXES),
+        sizeof(LINEAR_45_INDEXES) / sizeof(*LINEAR_45_INDEXES),
+        sizeof(LINEAR_90_INDEXES) / sizeof(*LINEAR_90_INDEXES),
+        sizeof(LINEAR_135_INDEXES) / sizeof(*LINEAR_135_INDEXES)
+    };
 
-    for(int i = 0; i < PIXEL_COUNT; i++) {
-        RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
-        strip.SetPixelColor(i, color);
+    int groupingCount = sizes[currentDirection % 4];
+    RgbColor* colors = Convert::ColorRangeToColors(currentStartColor, currentEndColor, groupingCount);
+
+    //TODO: once your C++ skills are a bit better, rewrite these switch cases to use a common parameterized function that can figure out arrays
+    Serial.println("Direction: " + String(currentDirection));
+    switch (currentDirection)
+    {
+        case 0:
+            for (int i = 0; i < groupingCount; i++) {
+                int pinCount = sizeof(LINEAR_LED_INDEXES[i]) / sizeof(*LINEAR_LED_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_LED_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_LED_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 1:
+            for (int i = 0; i < groupingCount; i++) {
+                int pinCount = sizeof(LINEAR_45_INDEXES[i]) / sizeof(*LINEAR_45_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_45_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_45_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 2:
+            for (int i = 0; i < groupingCount; i++) {
+                int pinCount = sizeof(LINEAR_90_INDEXES[i]) / sizeof(*LINEAR_90_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_90_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_90_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 3:
+            for (int i = 0; i < groupingCount; i++) {
+                int pinCount = sizeof(LINEAR_135_INDEXES[i]) / sizeof(*LINEAR_135_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_135_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_135_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 4:
+            for (int i = groupingCount - 1; i >= 0; i--) {
+                int pinCount = sizeof(LINEAR_LED_INDEXES[i]) / sizeof(*LINEAR_LED_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[groupingCount - 1 - i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_LED_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_LED_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 5:
+            for (int i = groupingCount - 1; i >= 0; i--) {
+                int pinCount = sizeof(LINEAR_45_INDEXES[i]) / sizeof(*LINEAR_45_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[groupingCount - 1 - i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_45_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_45_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 6:
+            for (int i = groupingCount - 1; i >= 0; i--) {
+                int pinCount = sizeof(LINEAR_90_INDEXES[i]) / sizeof(*LINEAR_90_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[groupingCount - 1 - i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_90_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_90_INDEXES[i][j], color);
+                }
+            }
+            break;
+        case 7:
+            for (int i = groupingCount - 1; i >= 0; i--) {
+                int pinCount = sizeof(LINEAR_135_INDEXES[i]) / sizeof(*LINEAR_135_INDEXES[i]);
+                RgbColor color = Convert::ColorToBrightnessAdjustedColor(colors[groupingCount - 1 - i], currentBrightness, 5);
+
+                for (int j = 0; j < pinCount && LINEAR_135_INDEXES[i][j] != -1; j++) {
+                    strip.SetPixelColor(LINEAR_135_INDEXES[i][j], color);
+                }
+            }
+            break;
+        default:
+            break;
     }
 
     delete[] colors;

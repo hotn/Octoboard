@@ -77,4 +77,8 @@ void factoryReset();
  * Blink the LED ring on the settings button
  */
 void blinkButton(int blinkCount, int onOffDelay);
+
+template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
+template<class T> inline Print &operator <(Print &obj, T arg) { obj.println(arg); return obj; }
+
 #endif
